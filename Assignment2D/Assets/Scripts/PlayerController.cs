@@ -3,17 +3,35 @@ using UnityEngine.InputSystem;
 
 public class PlayerController : MonoBehaviour
 {
-    private PlayerMove playerMove;
+    private Rigidbody2D rb;
+
+    [SerializeField] private float moveSpeed = 5f;
+    [SerializeField] private float jumpForce = 5f;
+
+    public Vector3 MoveDirection { get; set; } = Vector3.zero;
+
     private Vector2 moveInput = Vector2.zero;
+    private bool isJumping = false;
 
     private void Awake()
     {
-        playerMove = GetComponent<PlayerMove>();
+        rb = GetComponent<Rigidbody2D>();
     }
 
     private void Update()
     {
-        playerMove.MoveDirection = moveInput;
+        MoveDirection = moveInput;
+    }
+
+    private void FixedUpdate()
+    {
+        Move();
+
+        if (isJumping)
+        {
+            Jump();
+            isJumping = false;
+        }
     }
 
     public void OnMove(InputAction.CallbackContext context)
@@ -28,7 +46,18 @@ public class PlayerController : MonoBehaviour
     {
         if (context.performed)
         {
-            //
+            isJumping = true;
         }
+    }
+
+    private void Move()
+    {
+        Vector2 velocity = MoveDirection * moveSpeed;
+        rb.linearVelocity = new Vector2(velocity.x, rb.linearVelocity.y);
+    }
+
+    private void Jump()
+    {
+        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
     }
 }
