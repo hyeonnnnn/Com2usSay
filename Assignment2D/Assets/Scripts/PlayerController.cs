@@ -30,6 +30,7 @@ public class PlayerController : MonoBehaviour
         if (isJumping)
         {
             Jump();
+            // isGround 조건 필요
             isJumping = false;
         }
     }
