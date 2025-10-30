@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class JumpCommand : Command
 {
-    Player player;
+    private Player _player;
 
     public JumpCommand(Player player)
     {
-        this.player = player;
+        _player = player;
     }
 
     public override void Execute()
     {
-        this.player.Jump();
+        _player.Jump();
     }
 }

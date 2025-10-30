@@ -2,15 +2,15 @@ using UnityEngine;
 
 public class MoveRightCommand : Command
 {
-    Player player;
+    private Player _player;
 
     public MoveRightCommand(Player player)
     {
-        this.player = player;
+        _player = player;
     }
 
     public override void Execute()
     {
-        this.player.MoveRight();
+        _player.MoveRight();
     }
 }

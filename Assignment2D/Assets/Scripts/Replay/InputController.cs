@@ -1,64 +1,50 @@
-using UnityEngine;
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using JetBrains.Annotations;
 
 public class InputController : MonoBehaviour
 {
-    [SerializeField] private Player player;
+    [SerializeField] private Player _player;
 
-    private Invoker invoker;
-    private bool isRecording = true;
-    private bool isReplaying = false;
-    private Command keycodeLeft, keycodeRight, keycodeSpace;
+    private Invoker _invoker;
+    private Command _keycodeLeft;
+    private Command _keycodeRight;
+    private Command _keycodeSpace;
 
     private void Start()
     {
-        invoker = gameObject.AddComponent<Invoker>();
-        keycodeLeft = new MoveLeftCommand(player);
-        keycodeRight = new MoveRightCommand(player);
-        keycodeSpace = new JumpCommand(player);
+        _invoker = gameObject.AddComponent<Invoker>();
+        _invoker.Init(_player.transform);
+
+        _keycodeLeft = new MoveLeftCommand(_player);
+        _keycodeRight = new MoveRightCommand(_player);
+        _keycodeSpace = new JumpCommand(_player);
+
+        _invoker.StartNewSegmentRecording();
     }
 
     private void Update()
     {
-        // 키 입력을 인보터에게 커맨드 전달
-        if(isReplaying == false && isRecording == true)
+        if (_invoker.IsReplaying == false)
         {
             if (Input.GetKeyDown(KeyCode.A))
             {
-                invoker.ExecuteCommand(keycodeLeft);
+                _invoker.PushEvent(_keycodeLeft);
             }
             if (Input.GetKeyDown(KeyCode.D))
             {
-                invoker.ExecuteCommand(keycodeRight);
+                _invoker.PushEvent(_keycodeRight);
             }
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                invoker.ExecuteCommand(keycodeSpace);
+                _invoker.PushEvent(_keycodeSpace);
             }
         }
 
         if (Input.GetKeyDown(KeyCode.P))
         {
-            StartReplaying();
+            _invoker.StartReplay();
         }
-    }
-
-    public void StartRecording()
-    {
-        isRecording = true;
-        isReplaying = false;
-
-        invoker.Record();
-    }
-
-    public void StartReplaying()
-    {
-        isRecording = false;
-        isReplaying = true;
-
-        player.ResetPosition();
-        invoker.Replay();
     }
 }

@@ -1,81 +1,94 @@
-using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
-public class Invoker : MonoBehaviour
+public sealed class Invoker : MonoBehaviour
 {
-    public bool isRecording = false;
-    public bool isReplaying = false;
-    public float recordingTime;
-    public float replayingTime;
+    [SerializeField] private Transform _target;
 
-    private Queue<PlayerEvent> recordedCommandQueue = new Queue<PlayerEvent>();
+    public bool IsRecording { get; private set; }
+    public bool IsReplaying { get; private set; }
 
-    private void Start()
+    private Vector3 _startPosition;
+    private Quaternion _startRotation;
+
+    private float _recordStartTime;
+    private Coroutine _replayRoutine;
+    private readonly List<PlayerEvent> _events = new();
+
+    public void Init(Transform target) => _target = target;
+
+    public void StartNewSegmentRecording()
     {
-        Record();
+        if (IsReplaying) StopReplay();
+
+        _events.Clear();
+        IsRecording = true;
     }
 
-    private void FixedUpdate()
+    public void PushEvent(Command command)
     {
-        // 녹화할 때 녹화 시간 늘리기
-        if (isRecording)
-        {
-            recordingTime += Time.deltaTime;
-        }
-        // 재생할 때 재생 시간 늘리고 커맨드 실행하기
-        else if (isReplaying)
-        {
-            replayingTime += Time.deltaTime;
+        if (command == null) return;
 
-            // 남은 커맨드 없어질 때까지 모두 실행
-            if(recordedCommandQueue.Count > 0)
-            {
-                if (Mathf.Approximately(replayingTime, recordedCommandQueue.Peek().Timestamp))
-                {
-                    recordedCommandQueue.Peek().Command.Execute();
-                    recordedCommandQueue.Dequeue();
-                }
-            }
-            // 남은 커맨드 없으면 재생 종료하고 다시 녹화 모드
-            else
-            {
-                isReplaying = false;
-                Record();
-            }
-        }
-    }
-
-    public void ExecuteCommand(Command command)
-    {
         command.Execute();
 
-        if (isRecording)
+        if (!IsRecording) return;
+
+        if (_events.Count == 0)
         {
-            recordedCommandQueue.Enqueue(new PlayerEvent(recordingTime, command));
+            _startPosition = _target.position;
+            _startRotation = _target.rotation;
+            _recordStartTime = Time.unscaledTime;
         }
+
+        float t = Time.unscaledTime - _recordStartTime;
+        _events.Add(new PlayerEvent(t, command));
     }
 
-    public void Record()
+    public void StartReplay()
     {
-        if (isReplaying) return;
-
-        recordingTime = 0;
-        isRecording = true;
-        isReplaying = false;
-    }
-
-    public void Replay()
-    {
-        Debug.Log("Replaying Start");
-        recordingTime = 0;
-        replayingTime = 0;
-        isReplaying = true;
-        isRecording = false;
-
-        if (recordedCommandQueue.Count <= 0)
+        if (_events.Count == 0)
         {
-            Debug.LogError("녹화된 커맨드가 없음");
+            return;
         }
+        if (_target == null)
+        {
+            return;
+        }
+
+        if (IsReplaying) StopReplay();
+        IsRecording = false;
+
+        _target.SetPositionAndRotation(_startPosition, _startRotation);
+
+        IsReplaying = true;
+        _replayRoutine = StartCoroutine(ReplayAndResume());
     }
 
+    public void StopReplay()
+    {
+        if (_replayRoutine != null)
+        {
+            StopCoroutine(_replayRoutine);
+            _replayRoutine = null;
+        }
+        IsReplaying = false;
+    }
+
+    private IEnumerator ReplayAndResume()
+    {
+        _events[0].Command.Execute();
+
+        for (int i = 1; i < _events.Count; i++)
+        {
+            float wait = Mathf.Max(0f, _events[i].Timestamp - _events[i - 1].Timestamp);
+            if (wait > 0f)
+                yield return new WaitForSecondsRealtime(wait);
+
+            _events[i].Command.Execute();
+        }
+
+        IsReplaying = false;
+        StartNewSegmentRecording();
+    }
 }
