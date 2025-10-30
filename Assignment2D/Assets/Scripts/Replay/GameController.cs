@@ -1,4 +1,3 @@
-// GameController.cs
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -21,6 +20,7 @@ public class GameController : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.R))
         {
+            Debug.Log("R key is clicked");
             StartReplay();
         }
     }
@@ -37,9 +37,10 @@ public class GameController : MonoBehaviour
 
     private void StartReplay()
     {
-        _isRecording = false;
-        StopAllCoroutines();
+        // _isRecording = false;
+        // StopAllCoroutines();
         _replayController.InitController(_player, _recordedEvents);
-        StartCoroutine(_replayController.ExecuteReplay());
+        _replayController.InitPlayer(_player, _player.initialPosition, _player.rb);
+        // StartCoroutine(_replayController.ExecuteReplay());
     }
 }

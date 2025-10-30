@@ -1,4 +1,3 @@
-// GhostReplayController.cs
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +6,21 @@ using UnityEngine;
 public class ReplayController : MonoBehaviour
 {
     private List<PlayerEvent> _events;
-    private GameActor _ghost;
+    private GameActor player;
 
-    public void InitController(GameActor ghost, List<PlayerEvent> events)
+    public void InitController(GameActor player, List<PlayerEvent> events)
     {
-        _ghost = ghost;
+        Debug.Log("InitController");
+        this.player = player;
         _events = new List<PlayerEvent>(events);
+    }
+
+    public void InitPlayer(GameActor player, Vector3 position, Rigidbody2D rb)
+    {
+        Debug.Log("InitPlayer");
+        player.transform.position = position;
+        player.transform.rotation = Quaternion.identity;
+        rb.linearVelocity = Vector2.zero;
     }
 
     public IEnumerator ExecuteReplay()
@@ -29,7 +37,7 @@ public class ReplayController : MonoBehaviour
 
             if (_events[index].Timestamp <= _events[0].Timestamp + elapsed)
             {
-                _events[index].Command.Execute(_ghost);
+                _events[index].Command.Execute(player);
                 index++;
             }
 
