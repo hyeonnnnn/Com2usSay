@@ -2,8 +2,15 @@ using UnityEngine;
 
 public class JumpCommand : Command
 {
-    public override void Execute(GameActor actor)
+    Player player;
+
+    public JumpCommand(Player player)
     {
-        actor.Jump();
+        this.player = player;
+    }
+
+    public override void Execute()
+    {
+        this.player.Jump();
     }
 }

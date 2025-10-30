@@ -2,8 +2,15 @@ using UnityEngine;
 
 public class MoveLeftCommand : Command
 {
-    public override void Execute(GameActor actor)
+    Player player;
+
+    public MoveLeftCommand(Player player)
     {
-        actor.MoveLeft();
+        this.player = player;
+    }
+
+    public override void Execute()
+    {
+        this.player.MoveLeft();
     }
 }

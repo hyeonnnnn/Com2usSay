@@ -2,12 +2,12 @@ using UnityEngine;
 
 public class Player : GameActor
 {
-    public float speed = 5f;
-    public Rigidbody2D rb;
+    private Rigidbody2D rb;
     private Vector2 velocity;
+    private Vector3 initialPosition;
+    private float speed = 5f;
     private float jumpForce = 500f;
 
-    public Vector3 initialPosition;
 
     private void Awake()
     {
@@ -17,6 +17,12 @@ public class Player : GameActor
     private void Start()
     {
         initialPosition = transform.position;
+    }
+
+    public void ResetPosition()
+    {
+        transform.position = initialPosition;
+        rb.linearVelocity = Vector2.zero;
     }
 
     public override void MoveLeft()
