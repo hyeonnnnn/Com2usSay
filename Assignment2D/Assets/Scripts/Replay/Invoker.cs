@@ -5,90 +5,69 @@ using UnityEngine;
 public sealed class Invoker : MonoBehaviour
 {
     [SerializeField] private Transform _target;
+    private float _recordedStartTime;
+    private Vector3 _startPosition;
+    private Coroutine _replayCoroutine;
+    // PlayerEvent 타입의 객체를 담음
+    public List<PlayerEvent> _events = new List<PlayerEvent>();
 
     public bool IsRecording { get; private set; }
     public bool IsReplaying { get; private set; }
 
-    private Vector3 _startPosition;
-    private Quaternion _startRotation;
-
-    private float _recordStartTime;
-    private Coroutine _replayRoutine;
-    private readonly List<PlayerEvent> _events = new();
-
-    public void Init(Transform target) => _target = target;
-
-    public void StartNewSegmentRecording()
+    private void Start()
     {
-        if (IsReplaying) StopReplay();
-
-        _events.Clear();
-        IsRecording = true;
+        _startPosition = transform.position;
     }
 
     public void PushEvent(Command command)
     {
-        if (command == null) return;
-
         command.Execute();
 
-        if (!IsRecording) return;
-
-        if (_events.Count == 0)
+        // 리플레이 때는 저장X
+        if(IsReplaying == true)
         {
-            _startPosition = _target.position;
-            _startRotation = _target.rotation;
-            _recordStartTime = Time.unscaledTime;
+            return;
         }
 
-        float t = Time.unscaledTime - _recordStartTime;
-        _events.Add(new PlayerEvent(t, command));
+        // 리플레이가 끝나서 커맨드가 다 비워지면 그때로 위치와 시간 저장
+        if (_events.Count == 0) 
+        {
+            _startPosition = _target.position;
+            _recordedStartTime = Time.unscaledTime;
+        }
+
+        float elapsedTime = Time.unscaledTime - _recordedStartTime;
+        _events.Add(new PlayerEvent(elapsedTime, command));
+    }
+
+    public void StartRecording()
+    {
+        IsRecording = true;
+        IsReplaying = false;
+        _events.Clear(); // 레코드 시작할 때 이전 커맨드 다 지우기
     }
 
     public void StartReplay()
     {
-        if (_events.Count == 0)
-        {
-            return;
-        }
-        if (_target == null)
-        {
-            return;
-        }
-
-        if (IsReplaying) StopReplay();
+        IsReplaying = true;
         IsRecording = false;
 
-        _target.SetPositionAndRotation(_startPosition, _startRotation);
-
-        IsReplaying = true;
-        _replayRoutine = StartCoroutine(ReplayAndResume());
+        _target.position = _startPosition;
+        _replayCoroutine = StartCoroutine(Replay());
     }
 
-    public void StopReplay()
+    private IEnumerator Replay()
     {
-        if (_replayRoutine != null)
-        {
-            StopCoroutine(_replayRoutine);
-            _replayRoutine = null;
-        }
-        IsReplaying = false;
-    }
 
-    private IEnumerator ReplayAndResume()
-    {
         _events[0].Command.Execute();
 
         for (int i = 1; i < _events.Count; i++)
         {
-            float wait = Mathf.Max(0f, _events[i].Timestamp - _events[i - 1].Timestamp);
-            if (wait > 0f)
-                yield return new WaitForSecondsRealtime(wait);
-
+            float waitTime = _events[i].Timestamp - _events[i - 1].Timestamp;
+            yield return new WaitForSeconds(waitTime);
             _events[i].Command.Execute();
         }
 
-        IsReplaying = false;
-        StartNewSegmentRecording();
+        IsReplaying = false; // 리플레이 중지
     }
 }

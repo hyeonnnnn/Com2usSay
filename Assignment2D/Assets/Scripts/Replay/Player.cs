@@ -7,7 +7,6 @@ public class Player : GameActor
     private float _speed = 5f;
     private float _jumpForce = 500f;
 
-
     private void Awake()
     {
         _rigidbody = GetComponent<Rigidbody2D>();
